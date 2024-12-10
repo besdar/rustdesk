@@ -1990,16 +1990,7 @@ jobs:
                curl \
                git \
                rpm \
-               wget
-          run: |
-            # disable git safe.directory
-            git config --global --add safe.directory "*"
-            pushd /workspace
-            # install
-            apt-get update -y
-            apt-get install -y \
                cmake \
-               curl \
                flatpak \
                flatpak-builder \
                gcc \
@@ -2008,6 +1999,10 @@ jobs:
                libgtk-3-dev \
                nasm \
                wget
+          run: |
+            # disable git safe.directory
+            git config --global --add safe.directory "*"
+            pushd /workspace
             # flatpak deps
             flatpak --user remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
             flatpak --user install -y flathub org.freedesktop.Platform/${{ matrix.job.arch }}/23.08
