@@ -1986,19 +1986,7 @@ jobs:
           shell: /bin/bash
           install: |
             apt-get update -y
-            apt-get install -y \
-               curl \
-               git \
-               rpm \
-               cmake \
-               flatpak \
-               flatpak-builder \
-               gcc \
-               git \
-               g++ \
-               libgtk-3-dev \
-               nasm \
-               wget
+            apt-get install -y git flatpak flatpak-builder
           run: |
             # disable git safe.directory
             git config --global --add safe.directory "*"
