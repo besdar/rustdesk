@@ -38,15 +38,15 @@
       "name": "rustdesk",
       "buildsystem": "simple",
       "build-commands": [
-        "bsdtar -zxvf rustdesk.deb",
-        "tar -xvf ./data.tar.xz",
-        "cp -r ./usr/*  /app/",
+        "bsdtar -Oxf rustdesk.deb data.tar.xz | bsdtar -xf -",
+        "cp -r usr/*  /app/",
         "mkdir -p /app/bin && ln -s /app/lib/rustdesk/rustdesk /app/bin/rustdesk",
         "mv /app/share/applications/rustdesk.desktop /app/share/applications/com.rustdesk.RustDesk.desktop",
         "mv /app/share/applications/rustdesk-link.desktop /app/share/applications/com.rustdesk.RustDesk-link.desktop",
         "sed -i '/^Icon=/ c\\Icon=com.rustdesk.RustDesk' /app/share/applications/*.desktop",
         "mv /app/share/icons/hicolor/scalable/apps/rustdesk.svg /app/share/icons/hicolor/scalable/apps/com.rustdesk.RustDesk.svg",
-        "for size in 16 24 32 48 64 128 256 512; do\n rsvg-convert -w $size -h $size -f png -o $size.png scalable.svg\n install -Dm644 $size.png /app/share/icons/hicolor/${size}x${size}/apps/com.rustdesk.RustDesk.png\n done"
+        "for size in 16 24 32 48 64 128 256 512; do\n rsvg-convert -w $size -h $size -f png -o $size.png scalable.svg\n install -Dm644 $size.png /app/share/icons/hicolor/${size}x${size}/apps/com.rustdesk.RustDesk.png\n done",
+        "install -Dm644 com.rustdesk.RustDesk.metainfo.xml /app/share/metainfo/com.rustdesk.RustDesk.metainfo.xml"
       ],
       "sources": [
         {
@@ -56,6 +56,10 @@
         {
           "type": "file",
           "path": "../res/scalable.svg"
+        },
+        {
+          "type": "file",
+          "path": "com.rustdesk.RustDesk.metainfo.xml"
         }
       ]
     }
