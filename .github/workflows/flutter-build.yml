@@ -1986,13 +1986,13 @@ jobs:
           shell: /bin/bash
           install: |
             apt-get update -y
-            apt-get install -y git flatpak flatpak-builder
+            apt-get install -y git flatpak flatpak-builder appstream
           run: |
             # disable git safe.directory
             git config --global --add safe.directory "*"
             pushd /workspace
             # flatpak deps
-            flatpak --user remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+            flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
             # package
             pushd flatpak
             git clone https://github.com/flathub/shared-modules.git --depth=1
