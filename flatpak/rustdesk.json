@@ -24,10 +24,8 @@
     },
     {
       "name": "pam",    
-      "buildsystem": "simple",
-      "build-commands": [
-          "./configure --disable-selinux --prefix=/app && make -j4 install"
-      ],
+      "buildsystem": "autotools",
+      "config-opts": [ "--disable-selinux" ],
       "sources": [
         {
           "type": "archive",
@@ -53,7 +51,7 @@
       "sources": [
         {
           "type": "file",
-          "path": "./rustdesk.deb"
+          "path": "rustdesk.deb"
         },
         {
           "type": "file",
