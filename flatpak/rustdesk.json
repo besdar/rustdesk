@@ -5,9 +5,23 @@
   "sdk": "org.freedesktop.Sdk",
   "command": "rustdesk",
   "icon": "share/icons/hicolor/scalable/apps/rustdesk.svg",
+  "cleanup": ["/include", "/lib/pkgconfig", "/share/gtk-doc"],
   "modules": [
     "shared-modules/libappindicator/libappindicator-gtk3-12.10.json",
-    "xdotool.json",
+    {
+      "name": "xdotool",
+      "no-autogen": true,
+      "make-install-args": [
+        "PREFIX=${FLATPAK_DEST}"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/jordansissel/xdotool/releases/download/v3.20211022.1/xdotool-3.20211022.1.tar.gz",
+          "sha256": "96f0facfde6d78eacad35b91b0f46fecd0b35e474c03e00e30da3fdd345f9ada"
+        }
+      ]
+    },
     {
       "name": "pam",    
       "buildsystem": "simple",
@@ -36,7 +50,6 @@
         "mv /app/share/icons/hicolor/scalable/apps/rustdesk.svg /app/share/icons/hicolor/scalable/apps/com.rustdesk.RustDesk.svg",
         "for size in 16 24 32 48 64 128 256 512; do\n rsvg-convert -w $size -h $size -f png -o $size.png scalable.svg\n install -Dm644 $size.png /app/share/icons/hicolor/${size}x${size}/apps/com.rustdesk.RustDesk.png\n done"
       ],
-      "cleanup": ["/include", "/lib/pkgconfig", "/share/gtk-doc"],
       "sources": [
         {
           "type": "file",
@@ -51,7 +64,6 @@
   ],
   "finish-args": [
     "--share=ipc",
-    "--socket=x11",
     "--socket=fallback-x11",
     "--socket=wayland",
     "--share=network",
