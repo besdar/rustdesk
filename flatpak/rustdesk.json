@@ -8,13 +8,22 @@
   "rename-desktop-file": "rustdesk.desktop",
   "rename-icon": "rustdesk",
   "modules": [
+    {
+      "name": "appstream",
+      "buildsystem": "autotools",
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/ximion/appstream/archive/refs/tags/v1.0.4.tar.gz",
+          "sha256": "dff6efa67d9ea4797870d70e3370b9e3fa66ce3c749aba68e6b10222473463cf"
+        }
+      ]
+    },
     "shared-modules/libappindicator/libappindicator-gtk3-12.10.json",
     {
       "name": "xdotool",
       "no-autogen": true,
-      "make-install-args": [
-        "PREFIX=${FLATPAK_DEST}"
-      ],
+      "make-install-args": ["PREFIX=${FLATPAK_DEST}"],
       "sources": [
         {
           "type": "archive",
@@ -24,9 +33,9 @@
       ]
     },
     {
-      "name": "pam",    
+      "name": "pam",
       "buildsystem": "autotools",
-      "config-opts": [ "--disable-selinux" ],
+      "config-opts": ["--disable-selinux"],
       "sources": [
         {
           "type": "archive",
