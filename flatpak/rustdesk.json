@@ -10,7 +10,8 @@
   "modules": [
     {
       "name": "appstream",
-      "buildsystem": "autotools",
+      "buildsystem": "meson",
+      "config-opts": ["-Dapidocs=false", "-Dgir=false", "-Dcompose=true"],
       "sources": [
         {
           "type": "archive",
