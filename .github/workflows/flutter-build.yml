@@ -1993,10 +1993,11 @@ jobs:
             pushd /workspace
             # flatpak deps
             flatpak --user remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+            flatpak install -y flathub org.flatpak.Builder
             # package
             pushd flatpak
             git clone https://github.com/flathub/shared-modules.git --depth=1
-            flatpak-builder --user --install-deps-from=flathub -y --force-clean --repo=repo ./build ./rustdesk.json
+            flatpak run org.flatpak.Builder --user --install-deps-from=flathub -y --force-clean --repo=repo ./build ./rustdesk.json
             flatpak build-bundle ./repo rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}.flatpak com.rustdesk.RustDesk
 
       - name: Publish flatpak package
