@@ -1986,7 +1986,7 @@ jobs:
           shell: /bin/bash
           install: |
             apt-get update -y
-            apt-get install -y git flatpak flatpak-builder libstemmer-dev
+            apt-get install -y git flatpak flatpak-builder libstemmer-dev meson ninja-build pkg-config
           run: |
             # disable git safe.directory
             git config --global --add safe.directory "*"
