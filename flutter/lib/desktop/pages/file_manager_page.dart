@@ -7,6 +7,7 @@ import 'package:flutter_hbb/common/widgets/dialog.dart';
 import 'package:flutter_hbb/desktop/widgets/dragable_divider.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:desktop_drop/desktop_drop.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -420,8 +421,109 @@ class _FileManagerViewState extends State<FileManagerView> {
 
   FileController get controller => widget.controller;
   bool get isLocal => widget.controller.isLocal;
+  bool get usePortalFileAccess => isLinux && isFlatpak && isLocal;
   FFI get _ffi => widget._ffi;
   SelectedItems get selectedItems => controller.selectedItems;
+
+  String _nameFromPath(String path) {
+    final names =
+        path.split(Platform.pathSeparator).where((name) => name.isNotEmpty);
+    return names.isEmpty ? path : names.last;
+  }
+
+  Entry _entryFromPath(String path, {String? name, int size = 0}) {
+    return Entry()
+      ..path = path
+      ..name = name?.isNotEmpty == true ? name! : _nameFromPath(path)
+      ..entryType = 4
+      ..size = size;
+  }
+
+  Entry _directoryEntryFromPath(String path) {
+    return Entry()
+      ..path = path
+      ..name = _nameFromPath(path)
+      ..entryType = 0
+      ..size = 0;
+  }
+
+  void _showFileAccessError(String path) {
+    msgBox(_ffi.sessionId, 'custom-nook-nocancel-hasclose', 'Error',
+        '${translate("No permission")}: $path', '', _ffi.dialogManager);
+  }
+
+  Future<String?> _pickPortalDirectory(
+      {FileController? targetController, String? dialogTitle}) async {
+    final currentPath = (targetController ?? controller).directory.value.path;
+    return await FilePicker.platform.getDirectoryPath(
+      dialogTitle: dialogTitle ?? translate('Upload folder'),
+      initialDirectory: currentPath.isEmpty ? null : currentPath,
+    );
+  }
+
+  Future<bool> _openPortalDirectory(FileController targetController,
+      {String? dialogTitle}) async {
+    final selectedDirectory = await _pickPortalDirectory(
+        targetController: targetController, dialogTitle: dialogTitle);
+    if (selectedDirectory == null || selectedDirectory.isEmpty) {
+      return false;
+    }
+    final opened = await targetController.openDirectory(selectedDirectory);
+    if (!opened) {
+      _showFileAccessError(selectedDirectory);
+    }
+    return opened;
+  }
+
+  Future<bool> _ensurePortalLocalDestination() async {
+    if (!isLinux || !isFlatpak || isLocal) {
+      return true;
+    }
+    final localController = _ffi.fileModel.localController;
+    if (localController.directory.value.path.isNotEmpty) {
+      return true;
+    }
+    return await _openPortalDirectory(localController,
+        dialogTitle: translate(isWeb ? 'Download' : 'Receive'));
+  }
+
+  Future<void> _uploadPortalFiles() async {
+    final result = await FilePicker.platform.pickFiles(
+      dialogTitle: translate('Upload files'),
+      allowMultiple: true,
+      withData: false,
+    );
+    if (result == null || result.files.isEmpty) {
+      return;
+    }
+    final items = SelectedItems(isLocal: true);
+    for (final file in result.files) {
+      final path = file.path;
+      if (path == null || path.isEmpty) {
+        continue;
+      }
+      items.add(_entryFromPath(path, name: file.name, size: file.size));
+    }
+    if (!SelectedItems.valid(items.items)) {
+      return;
+    }
+    await controller.sendFiles(items, controller.getOtherSideDirectoryData());
+  }
+
+  Future<void> _uploadPortalFolder() async {
+    final selectedDirectory =
+        await _pickPortalDirectory(dialogTitle: translate('Upload folder'));
+    if (selectedDirectory == null || selectedDirectory.isEmpty) {
+      return;
+    }
+    if (!await controller.openDirectory(selectedDirectory)) {
+      _showFileAccessError(selectedDirectory);
+      return;
+    }
+    final items = SelectedItems(isLocal: true);
+    items.add(_directoryEntryFromPath(selectedDirectory));
+    await controller.sendFiles(items, controller.getOtherSideDirectoryData());
+  }
 
   @override
   void initState() {
@@ -717,7 +819,12 @@ class _FileManagerViewState extends State<FileManagerView> {
                         right: 3,
                       ),
                       onPressed: () {
-                        controller.goToHomeDirectory();
+                        if (usePortalFileAccess) {
+                          _openPortalDirectory(controller,
+                              dialogTitle: translate('Home'));
+                        } else {
+                          controller.goToHomeDirectory();
+                        }
                       },
                       child: SvgPicture.asset(
                         "assets/home.svg",
@@ -730,6 +837,12 @@ class _FileManagerViewState extends State<FileManagerView> {
                     MenuButton(
                       tooltip: translate('Create Folder'),
                       onPressed: () {
+                        if (usePortalFileAccess &&
+                            controller.directory.value.path.isEmpty) {
+                          _openPortalDirectory(controller,
+                              dialogTitle: translate('Home'));
+                          return;
+                        }
                         final name = TextEditingController();
                         String? errorText;
                         _ffi.dialogManager.show((setState, close, context) {
@@ -894,6 +1007,30 @@ class _FileManagerViewState extends State<FileManagerView> {
                         ),
                       ).marginOnly(left: 8),
                     )).marginOnly(left: 16),
+              if (usePortalFileAccess)
+                MenuButton(
+                  tooltip: translate('Upload files'),
+                  padding: EdgeInsets.only(
+                    left: 8,
+                  ),
+                  onPressed: _uploadPortalFiles,
+                  child: Icon(Icons.upload_file_rounded,
+                      color: Theme.of(context).tabBarTheme.labelColor),
+                  color: Theme.of(context).cardColor,
+                  hoverColor: Theme.of(context).hoverColor,
+                ),
+              if (usePortalFileAccess)
+                MenuButton(
+                  tooltip: translate('Upload folder'),
+                  padding: EdgeInsets.only(
+                    left: 3,
+                  ),
+                  onPressed: _uploadPortalFolder,
+                  child: Icon(Icons.drive_folder_upload_rounded,
+                      color: Theme.of(context).tabBarTheme.labelColor),
+                  color: Theme.of(context).cardColor,
+                  hoverColor: Theme.of(context).hoverColor,
+                ),
               Obx(() => ElevatedButton.icon(
                     style: ButtonStyle(
                       padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
@@ -907,7 +1044,10 @@ class _FileManagerViewState extends State<FileManagerView> {
                       ),
                     ),
                     onPressed: SelectedItems.valid(selectedItems.items)
-                        ? () {
+                        ? () async {
+                            if (!await _ensurePortalLocalDestination()) {
+                              return;
+                            }
                             final otherSideData =
                                 controller.getOtherSideDirectoryData();
                             controller.sendFiles(selectedItems, otherSideData);
@@ -1367,7 +1507,7 @@ class _FileManagerViewState extends State<FileManagerView> {
   }
 
   bool _checkDoubleClick(Entry entry) {
-    final current = DateTime.now().millisecondsSinceEpoch;
+    final current = DateTime.now().millisecondsSinceEpoch.toDouble();
     final elapsed = current - _lastClickTime;
     _lastClickTime = current;
     if (_lastClickEntry == entry) {

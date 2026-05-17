@@ -7,6 +7,7 @@ final isMacOS_ = Platform.isMacOS;
 final isLinux_ = Platform.isLinux;
 final isWeb_ = false;
 final isWebDesktop_ = false;
+final isFlatpak_ = Platform.isLinux && File('/.flatpak-info').existsSync();
 
 final isDesktop_ = Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 

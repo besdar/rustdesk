@@ -379,7 +379,8 @@ class FileController {
 
   Future<void> onReady() async {
     if (isLocal) {
-      options.value.home = await bind.mainGetHomeDir();
+      options.value.home =
+          isLinux && isFlatpak ? "" : await bind.mainGetHomeDir();
     }
     options.value.showHidden = (await bind.sessionGetPeerOption(
             sessionId: sessionId,
@@ -397,7 +398,7 @@ class FileController {
       final dirs = <String>{
         if (directory.value.path.isNotEmpty) directory.value.path,
         if (savedDir.isNotEmpty) savedDir,
-        options.value.home,
+        if (options.value.home.isNotEmpty || !isLocal) options.value.home,
       };
       for (final dir in dirs) {
         if (await _openDirectoryPath(dir, isBack: true)) {
@@ -446,6 +447,9 @@ class FileController {
   }
 
   Future<bool> refresh() async {
+    if (isLocal && isLinux && isFlatpak && directory.value.path.isEmpty) {
+      return false;
+    }
     // "." can be both a refresh command and a real remote directory path.
     // Refresh must bypass openDirectory's command dispatch to avoid recursion.
     return await _openDirectoryPath(directory.value.path, isBack: true);
@@ -494,6 +498,7 @@ class FileController {
 
   void goToHomeDirectory() {
     if (isLocal) {
+      if (homePath.isEmpty) return;
       openDirectory(homePath);
       return;
     }
@@ -517,6 +522,9 @@ class FileController {
   }
 
   Future<bool> _goToParentDirectory({bool isBack = false}) async {
+    if (isLocal && isLinux && isFlatpak && directory.value.path.isEmpty) {
+      return false;
+    }
     final isWindows = options.value.isWindows;
     final dirPath = directory.value.path;
     var parent = PathUtil.dirname(dirPath, isWindows);
@@ -613,8 +621,12 @@ class FileController {
       }
 
       final dirs = paths.map((path) {
-        return PathUtil.getOtherSidePath(directory.value.path, path,
-            options.value.isWindows, toPath, isWindows);
+        return PathUtil.getOtherSidePath(
+            item.path,
+            path,
+            options.value.isWindows,
+            PathUtil.join(toPath, item.name, isWindows),
+            isWindows);
       });
 
       for (var dir in dirs) {
